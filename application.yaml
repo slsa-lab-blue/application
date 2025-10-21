@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/slsa-lab-blue/application'
+    repoURL: 'https://github.com/slsa-lab-red/application'
     targetRevision: main
     path: k8s 
   destination:
