@@ -5,6 +5,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  packages: write
 
 jobs:
   build-and-push:
@@ -27,21 +29,32 @@ jobs:
 
       - name: Build and push image
         uses: docker/build-push-action@v4
+        id: buildnpush
         with:
           context: .
           push: true
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.run_number }}
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
           build-args: |
             TEAM=${{ github.repository_owner }}
             COLOR=${{ secrets.TEAM_COLOR }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      
+      - name: Sign Container Image
+        env:
+          DIGEST: ${{ steps.buildnpush.outputs.digest }}
+        run: |
+          cosign sign --yes ${{ env.IMAGE }}@${DIGEST}
 
       - name: Update k8s manifest with new image tag
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          sed -i "s|image: .*|image: ${{ env.IMAGE }}:${{ github.run_number }}|" k8s/deployment.yaml || true
+          sed -i "s|image: .*|image: ${{ env.IMAGE }}:sha-${{ github.sha }}|" k8s/deployment.yaml || true
           git add k8s/deployment.yaml || true
           git commit -m "ci: update image to ${{ github.run_number }}" || true
           git push || true
