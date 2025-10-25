@@ -39,7 +39,6 @@ jobs:
             ${{ env.IMAGE }}:sha-${{ github.sha }}
           build-args: |
             TEAM=${{ github.repository_owner }}
-            COLOR=${{ secrets.TEAM_COLOR }}
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
